@@ -1,0 +1,14 @@
+{
+  "deno.enable": true,
+  "deno.unstable": ["ffi"],
+  "deno.suggest.imports.hosts": {
+    "https://jsr.io": true,
+    "https://deno.land": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  }
+}
