@@ -250,7 +250,7 @@ try {
   }
 } catch {}
 const active =
-  load() || DEFAULT_TZ.map((tz) => ZONES.find((z) => z.tz === tz));
+  load() || DEFAULT_TZ.map((tz) => ({ ...ZONES.find((z) => z.tz === tz) }));
 
 // ══════════════════════════════════════════════════
 // HELPERS
@@ -385,7 +385,7 @@ function available() {
 }
 
 function addZone(z) {
-  active.push(z);
+  active.push({ ...z });
   save();
   renderCards();
   toast(`✓ ${z.city} added`);
@@ -507,6 +507,174 @@ addBtn.addEventListener("click", openModal);
 
 document.getElementById("btnClose").addEventListener("click", () => {
   window.close();
+});
+
+// ══════════════════════════════════════════════════
+// WORK NOTES APPLICATION
+// ══════════════════════════════════════════════════
+let notes = [];
+const loadNotes = () => {
+  try {
+    return JSON.parse(localStorage.getItem("zlock-notes") || "null");
+  } catch {
+    return [];
+  }
+};
+const saveNotes = () => {
+  try {
+    localStorage.setItem("zlock-notes", JSON.stringify(notes));
+  } catch {}
+};
+
+// Seed a default note if empty
+notes = loadNotes();
+if (!notes || notes.length === 0) {
+  notes = [
+    {
+      id: "welcome-note",
+      title: "Welcome to Notes",
+      content: "This is your personal scratchpad for work.\n\n- Auto-saves as you type\n- Persistent until deleted\n- Tap '+' to create a new note",
+      updated: Date.now(),
+    },
+  ];
+  saveNotes();
+}
+
+let activeNoteId = notes[0]?.id || null;
+
+const notesList = document.getElementById("notesList");
+const noteEditor = document.getElementById("noteEditor");
+
+function renderNotesList() {
+  notesList.innerHTML = "";
+  const sorted = notes.slice().sort((a, b) => b.updated - a.updated);
+
+  if (sorted.length === 0) {
+    notesList.innerHTML = `<div class="tz-empty">All notes deleted</div>`;
+    activeNoteId = null;
+    renderEditor();
+    return;
+  }
+
+  sorted.forEach((note) => {
+    const item = document.createElement("div");
+    item.className = `note-item ${note.id === activeNoteId ? "active" : ""}`;
+
+    const d = new Date(note.updated);
+    const dateStr = d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: true });
+
+    item.innerHTML = `
+      <div class="note-item-title">${note.title || "Untitled Note"}</div>
+      <div class="note-item-date">${dateStr}</div>
+      <button class="note-item-delete" data-id="${note.id}" title="Delete note">×</button>
+    `;
+
+    item.addEventListener("click", (e) => {
+      if (e.target.classList.contains("note-item-delete")) return;
+      activeNoteId = note.id;
+      renderNotesList();
+      renderEditor();
+    });
+
+    const delBtn = item.querySelector(".note-item-delete");
+    delBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteNote(note.id);
+    });
+
+    notesList.appendChild(item);
+  });
+}
+
+function renderEditor() {
+  const current = notes.find((n) => n.id === activeNoteId);
+  if (!current) {
+    noteEditor.innerHTML = `
+      <div class="note-empty-state">
+        <span class="note-empty-icon">📝</span>
+        <div>No note selected.<br/>Create one to get started!</div>
+      </div>
+    `;
+    return;
+  }
+
+  noteEditor.innerHTML = `
+    <input class="note-title-input" id="noteTitle" type="text" placeholder="Untitled Note" value="${current.title || ""}" autocomplete="off" spellcheck="false" />
+    <textarea class="note-content-textarea" id="noteContent" placeholder="Start typing…" spellcheck="false">${current.content || ""}</textarea>
+  `;
+
+  const titleInp = document.getElementById("noteTitle");
+  const contentInp = document.getElementById("noteContent");
+
+  titleInp.addEventListener("input", () => {
+    current.title = titleInp.value;
+    current.updated = Date.now();
+    saveNotes();
+    // Update the item title in the list reactively
+    const activeItemTitle = notesList.querySelector(".note-item.active .note-item-title");
+    if (activeItemTitle) {
+      activeItemTitle.textContent = titleInp.value || "Untitled Note";
+    }
+  });
+
+  contentInp.addEventListener("input", () => {
+    current.content = contentInp.value;
+    current.updated = Date.now();
+    saveNotes();
+  });
+}
+
+function createNote() {
+  const newNote = {
+    id: "note_" + Date.now(),
+    title: "",
+    content: "",
+    updated: Date.now(),
+  };
+  notes.push(newNote);
+  saveNotes();
+  activeNoteId = newNote.id;
+  renderNotesList();
+  renderEditor();
+  const titleInp = document.getElementById("noteTitle");
+  if (titleInp) titleInp.focus();
+}
+
+function deleteNote(id) {
+  notes = notes.filter((n) => n.id !== id);
+  saveNotes();
+  if (activeNoteId === id) {
+    activeNoteId = notes.length > 0 ? notes[0].id : null;
+  }
+  renderNotesList();
+  renderEditor();
+}
+
+document.getElementById("newNoteBtn").addEventListener("click", createNote);
+
+// ══════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════
+const tabClock = document.getElementById("tabClock");
+const tabNotes = document.getElementById("tabNotes");
+const clockPanel = document.getElementById("clockPanel");
+const notesPanel = document.getElementById("notesPanel");
+
+tabClock.addEventListener("click", () => {
+  tabClock.classList.add("active");
+  tabNotes.classList.remove("active");
+  clockPanel.classList.add("active");
+  notesPanel.classList.remove("active");
+});
+
+tabNotes.addEventListener("click", () => {
+  tabNotes.classList.add("active");
+  tabClock.classList.remove("active");
+  notesPanel.classList.add("active");
+  clockPanel.classList.remove("active");
+
+  renderNotesList();
+  renderEditor();
 });
 
 // ══════════════════════════════════════════════════

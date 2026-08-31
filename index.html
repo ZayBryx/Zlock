@@ -25,13 +25,39 @@
         </div>
       </div>
 
-      <!-- ── Zone cards ── -->
-      <div class="zones-wrap" id="zonesWrap">
-        <!-- cards injected here -->
-        <button class="add-btn" id="addBtn">
-          <div class="add-plus">+</div>
-          Add time zone
+      <!-- ── Tabs navigation ── -->
+      <div class="tabs">
+        <button class="tab-btn active" id="tabClock">
+          <span class="tab-icon">🕒</span> Clock
         </button>
+        <button class="tab-btn" id="tabNotes">
+          <span class="tab-icon">📝</span> Notes
+        </button>
+      </div>
+
+      <!-- ── Clock Panel ── -->
+      <div class="tab-panel active" id="clockPanel">
+        <div class="zones-wrap" id="zonesWrap">
+          <!-- cards injected here -->
+          <button class="add-btn" id="addBtn">
+            <div class="add-plus">+</div>
+            Add time zone
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Notes Panel ── -->
+      <div class="tab-panel" id="notesPanel">
+        <div class="notes-sidebar">
+          <div class="sidebar-header">
+            <span class="sidebar-title">My Notes</span>
+            <button class="new-note-btn" id="newNoteBtn" title="Create Note">+</button>
+          </div>
+          <div class="notes-list" id="notesList"></div>
+        </div>
+        <div class="note-editor" id="noteEditor">
+          <!-- Editor elements injected dynamically by JS -->
+        </div>
       </div>
     </div>
 
