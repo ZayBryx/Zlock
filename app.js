@@ -510,7 +510,7 @@ document.getElementById("btnClose").addEventListener("click", () => {
 });
 
 // ══════════════════════════════════════════════════
-// WORK NOTES APPLICATION
+// WORK NOTES APPLICATION (RICH TEXT)
 // ══════════════════════════════════════════════════
 let notes = [];
 const loadNotes = () => {
@@ -526,14 +526,33 @@ const saveNotes = () => {
   } catch {}
 };
 
-// Seed a default note if empty
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function formatInitialContent(raw) {
+  if (!raw) return "<p><br></p>";
+  if (/<[a-z][\s\S]*>/i.test(raw)) {
+    return raw;
+  }
+  return raw
+    .split("\n")
+    .map((line) => (line.trim() ? `<p>${escapeHtml(line)}</p>` : "<p><br></p>"))
+    .join("");
+}
+
+// Seed a rich default note if empty
 notes = loadNotes();
 if (!notes || notes.length === 0) {
   notes = [
     {
       id: "welcome-note",
-      title: "Welcome to Notes",
-      content: "This is your personal scratchpad for work.\n\n- Auto-saves as you type\n- Persistent until deleted\n- Tap '+' to create a new note",
+      title: "Welcome to Rich Notes 🚀",
+      content: `<h1>Work Notes & Productivity</h1><p>Your upgraded rich-text workspace with live formatting and checklists.</p><h3>✨ Productivity Features</h3><ul><li><strong>Headings:</strong> H1 through H5 for clear document structure</li><li><strong>Formatting:</strong> <b>Bold</b>, <i>Italic</i>, <u>Underline</u>, <s>Strikethrough</s>, and <code>inline code</code></li><li><strong>Lists:</strong> Bullet points, numbered sequences, and divider lines</li></ul><h3>📋 Today's Checklist</h3><ul class="task-list"><li class="task-item completed"><input type="checkbox" checked="checked"> <span class="task-text">Explore rich text formatting tools</span></li><li class="task-item"><input type="checkbox"> <span class="task-text">Create a work task list</span></li><li class="task-item"><input type="checkbox"> <span class="task-text">Write your first formatted document</span></li></ul><blockquote><p>💡 Tip: Use the toolbar above to switch formats or click checkboxes directly to track your progress!</p></blockquote>`,
       updated: Date.now(),
     },
   ];
@@ -561,10 +580,17 @@ function renderNotesList() {
     item.className = `note-item ${note.id === activeNoteId ? "active" : ""}`;
 
     const d = new Date(note.updated);
-    const dateStr = d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: true });
+    const dateStr =
+      d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+      " " +
+      d.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
 
     item.innerHTML = `
-      <div class="note-item-title">${note.title || "Untitled Note"}</div>
+      <div class="note-item-title">${escapeHtml(note.title || "Untitled Note")}</div>
       <div class="note-item-date">${dateStr}</div>
       <button class="note-item-delete" data-id="${note.id}" title="Delete note">×</button>
     `;
@@ -599,28 +625,492 @@ function renderEditor() {
   }
 
   noteEditor.innerHTML = `
-    <input class="note-title-input" id="noteTitle" type="text" placeholder="Untitled Note" value="${current.title || ""}" autocomplete="off" spellcheck="false" />
-    <textarea class="note-content-textarea" id="noteContent" placeholder="Start typing…" spellcheck="false">${current.content || ""}</textarea>
+    <div class="note-editor-inner">
+      <input class="note-title-input" id="noteTitle" type="text" placeholder="Untitled Note" value="${escapeHtml(current.title || "")}" autocomplete="off" spellcheck="false" />
+      
+      <!-- Rich Text Toolbar -->
+      <div class="rt-toolbar" id="rtToolbar">
+        <button type="button" class="rt-btn" data-cmd="undo" title="Undo (Ctrl+Z)">↶</button>
+        <button type="button" class="rt-btn" data-cmd="redo" title="Redo (Ctrl+Y)">↷</button>
+        <span class="rt-divider"></span>
+        <select class="rt-format-select" id="rtFormat" title="Format Block">
+          <option value="p">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="h4">Heading 4</option>
+          <option value="h5">Heading 5</option>
+          <option value="blockquote">Quote</option>
+          <option value="pre">Code Block</option>
+        </select>
+        <span class="rt-divider"></span>
+        <button type="button" class="rt-btn" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+        <button type="button" class="rt-btn" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+        <button type="button" class="rt-btn" data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+        <button type="button" class="rt-btn" data-cmd="strikeThrough" title="Strikethrough (Ctrl+Shift+X)"><s>S</s></button>
+        <button type="button" class="rt-btn" id="rtCode" title="Inline Code (Ctrl+E)"><code>&lt;&gt;</code></button>
+        <span class="rt-divider"></span>
+        <button type="button" class="rt-btn" data-cmd="insertUnorderedList" title="Bullet List (Ctrl+Shift+8)">•≡</button>
+        <button type="button" class="rt-btn" data-cmd="insertOrderedList" title="Numbered List (Ctrl+Shift+7)">1.≡</button>
+        <button type="button" class="rt-btn" id="rtChecklist" title="Task Checklist (Ctrl+Shift+9)">☑</button>
+        <span class="rt-divider"></span>
+        <button type="button" class="rt-btn" data-cmd="insertHorizontalRule" title="Horizontal Divider">—</button>
+        <button type="button" class="rt-btn" data-cmd="removeFormat" title="Clear Formatting">🧹</button>
+      </div>
+
+      <!-- Rich Text ContentEditable Area -->
+      <div class="note-content-editor" id="noteContent" contenteditable="true" spellcheck="false" data-placeholder="Start typing your rich notes… (Try: # Header, - list, [ ] task)"></div>
+
+      <!-- Status Bar -->
+      <div class="note-status-bar">
+        <span id="noteWordCount">0 words</span>
+        <span class="status-dot">•</span>
+        <span id="noteCharCount">0 chars</span>
+        <span class="status-spacer"></span>
+        <span class="note-save-badge" id="noteSaveBadge">✓ Saved</span>
+      </div>
+    </div>
   `;
 
   const titleInp = document.getElementById("noteTitle");
-  const contentInp = document.getElementById("noteContent");
+  const contentEditor = document.getElementById("noteContent");
+  const formatSelect = document.getElementById("rtFormat");
+  const toolbar = document.getElementById("rtToolbar");
+  const wordCountEl = document.getElementById("noteWordCount");
+  const charCountEl = document.getElementById("noteCharCount");
+  const saveBadge = document.getElementById("noteSaveBadge");
+
+  // Load initial rich content
+  contentEditor.innerHTML = formatInitialContent(current.content);
+
+  // Update status bar counts
+  const updateCounts = () => {
+    const text = contentEditor.innerText || "";
+    const cleanText = text.trim();
+    const words = cleanText ? cleanText.split(/\s+/).length : 0;
+    const chars = text.replace(/\n/g, "").length;
+    if (wordCountEl) wordCountEl.textContent = `${words} ${words === 1 ? "word" : "words"}`;
+    if (charCountEl) charCountEl.textContent = `${chars} ${chars === 1 ? "char" : "chars"}`;
+  };
+
+  // Sync checkboxes completed class
+  contentEditor.querySelectorAll(".task-item").forEach((item) => {
+    const cb = item.querySelector("input[type='checkbox']");
+    if (cb && cb.checked) {
+      item.classList.add("completed");
+    }
+  });
+
+  updateCounts();
+
+  let saveTimeout = null;
+  const saveCurrentNote = () => {
+    current.content = contentEditor.innerHTML;
+    current.updated = Date.now();
+    saveNotes();
+    updateCounts();
+
+    if (saveBadge) {
+      saveBadge.textContent = "Saving…";
+      saveBadge.classList.add("saving");
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        saveBadge.textContent = "✓ Saved";
+        saveBadge.classList.remove("saving");
+      }, 400);
+    }
+  };
 
   titleInp.addEventListener("input", () => {
     current.title = titleInp.value;
     current.updated = Date.now();
     saveNotes();
-    // Update the item title in the list reactively
-    const activeItemTitle = notesList.querySelector(".note-item.active .note-item-title");
+    const activeItemTitle = notesList.querySelector(
+      ".note-item.active .note-item-title",
+    );
     if (activeItemTitle) {
       activeItemTitle.textContent = titleInp.value || "Untitled Note";
     }
   });
 
-  contentInp.addEventListener("input", () => {
-    current.content = contentInp.value;
-    current.updated = Date.now();
-    saveNotes();
+  contentEditor.addEventListener("input", () => {
+    saveCurrentNote();
+  });
+
+  // Handle interactive checkboxes
+  contentEditor.addEventListener("change", (e) => {
+    if (e.target && e.target.type === "checkbox") {
+      const taskItem = e.target.closest(".task-item");
+      if (e.target.checked) {
+        e.target.setAttribute("checked", "checked");
+        if (taskItem) taskItem.classList.add("completed");
+      } else {
+        e.target.removeAttribute("checked");
+        if (taskItem) taskItem.classList.remove("completed");
+      }
+      saveCurrentNote();
+    }
+  });
+
+
+
+  // Toolbar button formatting actions
+  toolbar.querySelectorAll(".rt-btn[data-cmd]").forEach((btn) => {
+    btn.addEventListener("mousedown", (e) => {
+      e.preventDefault(); // Prevent losing editor focus
+      const cmd = btn.dataset.cmd;
+      document.execCommand(cmd, false, null);
+      saveCurrentNote();
+      syncToolbarActiveState();
+    });
+  });
+
+  // Format block dropdown (H1 - H5, P, Quote, Pre)
+  formatSelect.addEventListener("change", () => {
+    const val = formatSelect.value;
+    contentEditor.focus();
+    if (
+      val === "p" ||
+      val === "h1" ||
+      val === "h2" ||
+      val === "h3" ||
+      val === "h4" ||
+      val === "h5" ||
+      val === "blockquote" ||
+      val === "pre"
+    ) {
+      document.execCommand("formatBlock", false, `<${val}>`);
+    }
+    saveCurrentNote();
+    syncToolbarActiveState();
+  });
+
+  // Inline Code formatting
+  const toggleInlineCode = () => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount || selection.isCollapsed) return;
+    const range = selection.getRangeAt(0);
+    const parentCode = selection.anchorNode.parentElement?.closest("code");
+    if (parentCode) {
+      // Unwrap code
+      const text = document.createTextNode(parentCode.textContent);
+      parentCode.parentNode.replaceChild(text, parentCode);
+    } else {
+      const codeEl = document.createElement("code");
+      codeEl.appendChild(range.extractContents());
+      range.insertNode(codeEl);
+    }
+    saveCurrentNote();
+    syncToolbarActiveState();
+  };
+
+  const codeBtn = document.getElementById("rtCode");
+  if (codeBtn) {
+    codeBtn.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      toggleInlineCode();
+    });
+  }
+
+  // Insert or Convert Selection to Checklist
+  const insertChecklist = () => {
+    contentEditor.focus();
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+
+    if (!selection.isCollapsed) {
+      // Convert selected text into checklist items
+      const fragment = range.cloneContents();
+      const tempDiv = document.createElement("div");
+      tempDiv.appendChild(fragment);
+
+      const rawText = tempDiv.innerText || tempDiv.textContent || "";
+      const lines = rawText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+
+      if (lines.length > 0) {
+        const taskList = document.createElement("ul");
+        taskList.className = "task-list";
+
+        lines.forEach((line) => {
+          const taskItem = document.createElement("li");
+          taskItem.className = "task-item";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          const textSpan = document.createElement("span");
+          textSpan.className = "task-text";
+          textSpan.textContent = line.trim();
+
+          taskItem.appendChild(cb);
+          taskItem.appendChild(textSpan);
+          taskList.appendChild(taskItem);
+        });
+
+        range.deleteContents();
+        range.insertNode(taskList);
+
+        // Move cursor to end of taskList
+        range.selectNodeContents(taskList);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        saveCurrentNote();
+        syncToolbarActiveState();
+        return;
+      }
+    }
+
+    // Single empty task item
+    const taskList = document.createElement("ul");
+    taskList.className = "task-list";
+    const taskItem = document.createElement("li");
+    taskItem.className = "task-item";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    const textSpan = document.createElement("span");
+    textSpan.className = "task-text";
+    textSpan.innerHTML = "&nbsp;";
+
+    taskItem.appendChild(cb);
+    taskItem.appendChild(textSpan);
+    taskList.appendChild(taskItem);
+
+    range.deleteContents();
+    range.insertNode(taskList);
+
+    range.selectNodeContents(textSpan);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    saveCurrentNote();
+    syncToolbarActiveState();
+  };
+
+  const checklistBtn = document.getElementById("rtChecklist");
+  if (checklistBtn) {
+    checklistBtn.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      insertChecklist();
+    });
+  }
+
+  // Live Markdown-style triggers and Document Keyboard Shortcuts
+  contentEditor.addEventListener("keydown", (e) => {
+    // ── Document Keyboard Shortcuts ──
+    const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+    const cmdKey = isMac ? e.metaKey : e.ctrlKey;
+
+    if (cmdKey) {
+      // Ctrl+S: Quick Save
+      if (e.key.toLowerCase() === "s" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        saveCurrentNote();
+        toast("✓ Note saved");
+        return;
+      }
+      // Ctrl+E: Inline Code
+      if (e.key.toLowerCase() === "e" && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        toggleInlineCode();
+        return;
+      }
+      // Ctrl+Shift+X: Strikethrough
+      if ((e.key.toLowerCase() === "x" && e.shiftKey) || (e.key === "5" && e.altKey && e.shiftKey)) {
+        e.preventDefault();
+        document.execCommand("strikeThrough", false, null);
+        saveCurrentNote();
+        syncToolbarActiveState();
+        return;
+      }
+      // Ctrl+Shift+7 / Ctrl+Shift+O: Numbered list
+      if ((e.key === "7" && e.shiftKey) || (e.key.toLowerCase() === "o" && e.shiftKey)) {
+        e.preventDefault();
+        document.execCommand("insertOrderedList", false, null);
+        saveCurrentNote();
+        syncToolbarActiveState();
+        return;
+      }
+      // Ctrl+Shift+8 / Ctrl+Shift+U: Bullet list
+      if ((e.key === "8" && e.shiftKey) || (e.key.toLowerCase() === "u" && e.shiftKey)) {
+        e.preventDefault();
+        document.execCommand("insertUnorderedList", false, null);
+        saveCurrentNote();
+        syncToolbarActiveState();
+        return;
+      }
+      // Ctrl+Shift+9 / Ctrl+Shift+L: Task checklist
+      if ((e.key === "9" && e.shiftKey) || (e.key.toLowerCase() === "l" && e.shiftKey)) {
+        e.preventDefault();
+        insertChecklist();
+        return;
+      }
+      // Ctrl+Alt+1 .. 5: Headings
+      if (e.altKey && ["1", "2", "3", "4", "5"].includes(e.key)) {
+        e.preventDefault();
+        document.execCommand("formatBlock", false, `<h${e.key}>`);
+        saveCurrentNote();
+        syncToolbarActiveState();
+        return;
+      }
+      // Ctrl+Alt+0: Normal paragraph
+      if (e.altKey && e.key === "0") {
+        e.preventDefault();
+        document.execCommand("formatBlock", false, "<p>");
+        saveCurrentNote();
+        syncToolbarActiveState();
+        return;
+      }
+      // Ctrl+Alt+Q: Blockquote
+      if (e.altKey && e.key.toLowerCase() === "q") {
+        e.preventDefault();
+        document.execCommand("formatBlock", false, "<blockquote>");
+        saveCurrentNote();
+        syncToolbarActiveState();
+        return;
+      }
+    }
+
+    // ── Tab Indentation ──
+    if (e.key === "Tab") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        document.execCommand("outdent", false, null);
+      } else {
+        const inList = window.getSelection().anchorNode?.parentElement?.closest("li");
+        if (inList) {
+          document.execCommand("indent", false, null);
+        } else {
+          document.execCommand("insertHTML", false, "&nbsp;&nbsp;&nbsp;&nbsp;");
+        }
+      }
+      saveCurrentNote();
+      return;
+    }
+
+    // ── Live Markdown Triggers on Space ──
+    if (e.key === " " && !e.shiftKey && !cmdKey && !e.altKey) {
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0 && selection.isCollapsed) {
+        const node = selection.anchorNode;
+        if (node && node.nodeType === Node.TEXT_NODE) {
+          const textBeforeCursor = node.textContent.slice(0, selection.anchorOffset);
+
+          // Checklist trigger: [] or [ ]
+          if (textBeforeCursor === "[]" || textBeforeCursor === "[ ]") {
+            e.preventDefault();
+            node.textContent = node.textContent.slice(selection.anchorOffset);
+            insertChecklist();
+            return;
+          }
+          // Bullet list trigger: - or *
+          if (textBeforeCursor === "-" || textBeforeCursor === "*") {
+            e.preventDefault();
+            node.textContent = node.textContent.slice(selection.anchorOffset);
+            document.execCommand("insertUnorderedList", false, null);
+            saveCurrentNote();
+            syncToolbarActiveState();
+            return;
+          }
+          // Numbered list trigger: 1.
+          if (textBeforeCursor === "1.") {
+            e.preventDefault();
+            node.textContent = node.textContent.slice(selection.anchorOffset);
+            document.execCommand("insertOrderedList", false, null);
+            saveCurrentNote();
+            syncToolbarActiveState();
+            return;
+          }
+          // Heading triggers: # to #####
+          const headingMatch = textBeforeCursor.match(/^(#{1,5})$/);
+          if (headingMatch) {
+            e.preventDefault();
+            const level = headingMatch[1].length;
+            node.textContent = node.textContent.slice(selection.anchorOffset);
+            document.execCommand("formatBlock", false, `<h${level}>`);
+            saveCurrentNote();
+            syncToolbarActiveState();
+            return;
+          }
+          // Blockquote trigger: >
+          if (textBeforeCursor === ">") {
+            e.preventDefault();
+            node.textContent = node.textContent.slice(selection.anchorOffset);
+            document.execCommand("formatBlock", false, "<blockquote>");
+            saveCurrentNote();
+            syncToolbarActiveState();
+            return;
+          }
+          // Code block trigger: ```
+          if (textBeforeCursor === "```") {
+            e.preventDefault();
+            node.textContent = node.textContent.slice(selection.anchorOffset);
+            document.execCommand("formatBlock", false, "<pre>");
+            saveCurrentNote();
+            syncToolbarActiveState();
+            return;
+          }
+        }
+      }
+    }
+
+    // ── Enter Key in Task List ──
+    if (e.key === "Enter" && !e.shiftKey) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return;
+      const taskItem = selection.anchorNode.parentElement?.closest(".task-item");
+
+      if (taskItem) {
+        const textSpan = taskItem.querySelector(".task-text") || taskItem;
+        const textContent = textSpan.textContent.trim();
+
+        if (!textContent) {
+          // Empty task item: exit checklist on Enter
+          e.preventDefault();
+          const taskList = taskItem.closest(".task-list");
+          taskItem.remove();
+          const p = document.createElement("p");
+          p.innerHTML = "<br>";
+          if (taskList && taskList.nextSibling) {
+            taskList.parentNode.insertBefore(p, taskList.nextSibling);
+          } else if (taskList) {
+            taskList.parentNode.appendChild(p);
+          } else {
+            contentEditor.appendChild(p);
+          }
+          const range = document.createRange();
+          range.selectNodeContents(p);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } else {
+          // Create new task item
+          e.preventDefault();
+          const newTaskItem = document.createElement("li");
+          newTaskItem.className = "task-item";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          const newSpan = document.createElement("span");
+          newSpan.className = "task-text";
+          newSpan.innerHTML = "&nbsp;";
+
+          newTaskItem.appendChild(cb);
+          newTaskItem.appendChild(newSpan);
+
+          taskItem.parentNode.insertBefore(newTaskItem, taskItem.nextSibling);
+
+          const range = document.createRange();
+          range.selectNodeContents(newSpan);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        saveCurrentNote();
+        syncToolbarActiveState();
+      }
+    }
   });
 }
 
@@ -628,7 +1118,7 @@ function createNote() {
   const newNote = {
     id: "note_" + Date.now(),
     title: "",
-    content: "",
+    content: "<p><br></p>",
     updated: Date.now(),
   };
   notes.push(newNote);
@@ -649,6 +1139,65 @@ function deleteNote(id) {
   renderNotesList();
   renderEditor();
 }
+
+// Toolbar active states synchronization
+function syncToolbarActiveState() {
+  const contentEditor = document.getElementById("noteContent");
+  const toolbar = document.getElementById("rtToolbar");
+  const formatSelect = document.getElementById("rtFormat");
+  if (!contentEditor || !toolbar || !formatSelect) return;
+
+  if (
+    document.activeElement !== contentEditor &&
+    !contentEditor.contains(document.activeElement)
+  ) {
+    return;
+  }
+  // Update basic formatting buttons
+  toolbar.querySelectorAll(".rt-btn[data-cmd]").forEach((btn) => {
+    const cmd = btn.dataset.cmd;
+    try {
+      if (document.queryCommandState(cmd)) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    } catch {}
+  });
+
+  // Check heading / block format
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    let node = selection.anchorNode;
+    if (node && node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+
+    const heading = node?.closest("h1, h2, h3, h4, h5, blockquote, pre, p");
+    if (heading) {
+      const tag = heading.tagName.toLowerCase();
+      formatSelect.value = tag;
+    } else {
+      formatSelect.value = "p";
+    }
+
+    // Check checklist active state
+    const taskItem = node?.closest(".task-item");
+    const checklistBtn = document.getElementById("rtChecklist");
+    if (checklistBtn) {
+      if (taskItem) checklistBtn.classList.add("active");
+      else checklistBtn.classList.remove("active");
+    }
+
+    // Check inline code active state
+    const codeEl = node?.closest("code");
+    const codeBtn = document.getElementById("rtCode");
+    if (codeBtn) {
+      if (codeEl) codeBtn.classList.add("active");
+      else codeBtn.classList.remove("active");
+    }
+  }
+}
+
+document.addEventListener("selectionchange", syncToolbarActiveState);
 
 document.getElementById("newNoteBtn").addEventListener("click", createNote);
 
@@ -676,6 +1225,46 @@ tabNotes.addEventListener("click", () => {
   renderNotesList();
   renderEditor();
 });
+
+// ══════════════════════════════════════════════════
+// SIDEBAR RESIZER
+// ══════════════════════════════════════════════════
+const notesSidebar = document.getElementById("notesSidebar");
+const notesResizer = document.getElementById("notesResizer");
+
+const savedSidebarWidth = localStorage.getItem("zlock-sidebar-width");
+if (savedSidebarWidth && notesSidebar) {
+  notesSidebar.style.width = `${Math.max(100, Math.min(260, parseInt(savedSidebarWidth, 10)))}px`;
+}
+
+if (notesResizer && notesSidebar) {
+  let isResizing = false;
+
+  notesResizer.addEventListener("mousedown", (e) => {
+    isResizing = true;
+    document.body.classList.add("is-resizing");
+    e.preventDefault();
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isResizing) return;
+    const panelRect = notesPanel.getBoundingClientRect();
+    const newWidth = e.clientX - panelRect.left;
+    const clamped = Math.max(100, Math.min(260, newWidth));
+    notesSidebar.style.width = `${clamped}px`;
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (isResizing) {
+      isResizing = false;
+      document.body.classList.remove("is-resizing");
+      const currentWidth = parseInt(notesSidebar.style.width, 10);
+      if (currentWidth) {
+        localStorage.setItem("zlock-sidebar-width", currentWidth);
+      }
+    }
+  });
+}
 
 // ══════════════════════════════════════════════════
 // INIT
