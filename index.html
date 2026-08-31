@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zlock</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- ── Custom Titlebar ── -->
+      <div class="titlebar">
+        <div class="titlebar-title">
+          <span class="titlebar-icon"><img class="logo-img" src="icons/Vector.svg" alt="Logo" /></span>
+          <span class="titlebar-name">Zlock</span>
+        </div>
+        <div class="win-controls">
+          <button class="win-btn close" id="btnClose" title="Close"></button>
+        </div>
+      </div>
+
+      <!-- ── Zone cards ── -->
+      <div class="zones-wrap" id="zonesWrap">
+        <!-- cards injected here -->
+        <button class="add-btn" id="addBtn">
+          <div class="add-plus">+</div>
+          Add time zone
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Modal -->
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+      <div class="modal">
+        <div class="modal-head">
+          <span class="modal-title">Add Time Zone</span>
+          <button class="modal-close-btn" id="modalClose">✕</button>
+        </div>
+        <div class="search-wrap">
+          <span class="search-ico">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            class="search-input"
+            id="tzSearch"
+            type="search"
+            placeholder="Search city or region…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <div class="tz-list" id="tzList"></div>
+        <div class="custom-section">
+          <div class="custom-label">Custom IANA Timezone</div>
+          <div class="custom-row">
+            <input
+              class="custom-input"
+              id="customInput"
+              type="text"
+              placeholder="e.g. Asia/Kuala_Lumpur"
+              spellcheck="false"
+            />
+            <button class="custom-add" id="customAdd">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

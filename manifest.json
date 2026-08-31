@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Zlock",
+  "version": "1.0.0",
+  "description": "A modern, premium dark-mode World Clock widget for your browser.",
+  "icons": {
+    "16": "icons/logo.png",
+    "32": "icons/logo.png",
+    "48": "icons/logo.png",
+    "128": "icons/logo.png"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "icons/logo.png",
+      "32": "icons/logo.png",
+      "48": "icons/logo.png",
+      "128": "icons/logo.png"
+    }
+  }
+}
