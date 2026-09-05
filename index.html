@@ -17,32 +17,68 @@
       <!-- ── Custom Titlebar ── -->
       <div class="titlebar">
         <div class="titlebar-title">
+          <button class="btn-back-launcher hidden" id="btnBackLauncher" title="Back to Modes">← Modes</button>
           <span class="titlebar-icon"><img class="logo-img" src="icons/Vector.svg" alt="Logo" /></span>
-          <span class="titlebar-name">Zlock</span>
+          <span class="titlebar-name" id="titlebarName">Zlock</span>
         </div>
         <div class="win-controls">
           <button class="win-btn close" id="btnClose" title="Close"></button>
         </div>
       </div>
 
-      <!-- ── Tabs navigation ── -->
-      <div class="tabs">
-        <button class="tab-btn active" id="tabClock">
-          <span class="tab-icon">🕒</span> Clock
-        </button>
-        <button class="tab-btn" id="tabNotes">
-          <span class="tab-icon">📝</span> Notes
-        </button>
+      <!-- ── Launcher Selection Panel (Initial View) ── -->
+      <div class="tab-panel active" id="launcherPanel">
+        <div class="launcher-container">
+          <div class="launcher-header">
+            <h2 class="launcher-title">Choose Your Workspace</h2>
+            <p class="launcher-subtitle">Select a tool to launch in full screen</p>
+          </div>
+          <div class="launcher-cards">
+            <div class="launcher-card" data-mode="clock">
+              <div class="launcher-card-icon">🕒</div>
+              <div class="launcher-card-info">
+                <div class="launcher-card-name">World Clock</div>
+                <div class="launcher-card-desc">Live timezone tickers, global dates & UTC offsets</div>
+              </div>
+              <span class="launcher-arrow">→</span>
+            </div>
+
+            <div class="launcher-card" data-mode="notes">
+              <div class="launcher-card-icon">📝</div>
+              <div class="launcher-card-info">
+                <div class="launcher-card-name">Work Notes</div>
+                <div class="launcher-card-desc">Rich text editor, checklists & word counters</div>
+              </div>
+              <span class="launcher-arrow">→</span>
+            </div>
+
+            <div class="launcher-card" data-mode="clockify">
+              <div class="launcher-card-icon">⏱️</div>
+              <div class="launcher-card-info">
+                <div class="launcher-card-name">Clockify Tracker</div>
+                <div class="launcher-card-desc">Services, clients, bookmarks & live time logging</div>
+              </div>
+              <span class="launcher-arrow">→</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ── Clock Panel ── -->
-      <div class="tab-panel active" id="clockPanel">
+      <div class="tab-panel" id="clockPanel">
+        <!-- World Clock Scrubber Toolbar -->
+        <div class="clock-toolbar">
+          <div class="clock-status-wrap">
+            <span class="clock-mode-badge live" id="clockModeBadge"><span class="pulse-dot"></span> LIVE TIME</span>
+            <span class="clock-scrub-info" id="clockScrubInfo">Scroll mouse wheel on timeline to slide hours left or right</span>
+          </div>
+          <div class="clock-controls-wrap">
+            <button class="add-btn-compact" id="addBtn" title="Add Time Zone">+ Add Zone</button>
+          </div>
+        </div>
+
         <div class="zones-wrap" id="zonesWrap">
-          <!-- cards injected here -->
-          <button class="add-btn" id="addBtn">
-            <div class="add-plus">+</div>
-            Add time zone
-          </button>
+          <!-- Timeline rows injected dynamically by JS -->
         </div>
       </div>
 
@@ -60,6 +96,124 @@
           <!-- Editor elements injected dynamically by JS -->
         </div>
       </div>
+
+      <!-- ── Clockify Panel ── -->
+      <div class="tab-panel" id="clockifyPanel">
+        <div class="clockify-container">
+          <!-- Header Bar -->
+          <div class="clockify-header">
+            <div class="clockify-user-info" id="clockifyUserInfo">
+              <div class="clockify-avatar" id="clockifyAvatar">?</div>
+              <div class="clockify-user-meta">
+                <div class="clockify-user-name" id="clockifyUserName">JAR Consulting Group</div>
+                <div class="clockify-user-status" id="clockifyUserStatus">Connecting...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Timer Card -->
+          <div class="clockify-timer-card" id="clockifyTimerCard">
+            <div class="timer-status-row">
+              <span class="timer-badge" id="clockifyTimerBadge"><span class="pulse-dot"></span> NO TIMER ACTIVE</span>
+              <span class="timer-display" id="clockifyTimerDisplay">00:00:00</span>
+            </div>
+            <div class="timer-details-row">
+              <input type="text" class="timer-desc-input" id="clockifyTimerDesc" placeholder="What are you working on? (Select service below or type here)" />
+              <button class="timer-action-btn start" id="btnClockifyTimerToggle">▶ Start</button>
+            </div>
+          </div>
+
+          <!-- Clockify Sub-View Navigation Tabs -->
+          <div class="clockify-nav-tabs">
+            <button class="clockify-nav-btn active" id="tabClockifyServices" data-subtab="services">⚡ Services & Clients</button>
+            <button class="clockify-nav-btn" id="tabClockifyHistory" data-subtab="history">📜 Time History Logs</button>
+          </div>
+
+          <!-- View 1: Time History Logs View -->
+          <div class="clockify-subview hidden" id="clockifyViewHistory">
+            <div class="clockify-history-card" id="clockifyHistoryCard">
+              <div class="history-header">
+                <span class="history-title">📜 Time History Logs</span>
+                <span class="history-total" id="clockifyHistoryTotal">Today: 0h 0m</span>
+              </div>
+              <div class="history-list" id="clockifyHistoryList">
+                <div class="history-empty" id="clockifyHistoryEmpty">No recent time logs found.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- View 2: Services & Clients View (Default Active) -->
+          <div class="clockify-subview active" id="clockifyViewServices">
+            <!-- Toolbar: Search & Stats -->
+            <div class="clockify-toolbar">
+              <div class="clockify-search-wrap">
+                <span class="search-ico">🔍</span>
+                <input type="search" class="clockify-search-input" id="clockifySearchInput" placeholder="Filter services or clients..." autocomplete="off" />
+              </div>
+              <div class="clockify-filter-pills">
+                <button class="filter-pill active" data-filter="all">All</button>
+                <button class="filter-pill" data-filter="bookmarks">📌 Bookmarks</button>
+                <button class="filter-pill" data-filter="recent">Recent</button>
+                <button class="filter-pill" data-filter="clients">Clients</button>
+                <button class="filter-pill" data-filter="services">Services</button>
+                <button class="filter-pill" data-filter="billable">Billable</button>
+              </div>
+            </div>
+
+            <!-- Services / Projects List -->
+            <div class="clockify-projects-wrap" id="clockifyProjectsWrap">
+              <div class="clockify-loading-state" id="clockifyLoadingState">
+                <div class="spinner"></div>
+                <span>Pulling Clockify Services & Clients...</span>
+              </div>
+
+              <div class="clockify-sections-container hidden" id="clockifySectionsContainer">
+                <!-- Bookmarks Section -->
+                <div class="clockify-section" id="clockifyBookmarksSection">
+                  <div class="section-title"><span class="section-ico">📌</span> Bookmarked Clients & Services</div>
+                  <div class="clockify-grid" id="clockifyBookmarksGrid"></div>
+                </div>
+
+                <!-- Recent Section -->
+                <div class="clockify-section" id="clockifyRecentSection">
+                  <div class="section-title"><span class="section-ico">⭐</span> Recent Clients & Services</div>
+                  <div class="clockify-grid" id="clockifyRecentGrid"></div>
+                </div>
+
+                <!-- Clients Section -->
+                <div class="clockify-section" id="clockifyClientsSection">
+                  <div class="section-title"><span class="section-ico">🏢</span> Clients</div>
+                  <div class="clockify-grid" id="clockifyClientsGrid"></div>
+                </div>
+
+                <!-- Services Section -->
+                <div class="clockify-section" id="clockifyServicesSection">
+                  <div class="section-title"><span class="section-ico">⚡</span> All Services & Projects</div>
+                  <div class="clockify-grid" id="clockifyServicesGrid"></div>
+                </div>
+              </div>
+
+              <div class="clockify-empty-state hidden" id="clockifyEmptyState">
+                <div class="empty-icon">📂</div>
+                <div class="empty-text" id="clockifyEmptyText">No services or clients found.</div>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- Footer Stats Bar -->
+          <div class="clockify-stats-bar" id="clockifyStatsBar">
+            <span class="stat-item"><strong id="statServicesCount">0</strong> Services</span>
+            <span class="stat-divider">•</span>
+            <span class="stat-item"><strong id="statClientsCount">0</strong> Clients</span>
+            <span class="stat-divider">•</span>
+            <span class="stat-item"><strong id="statActiveWorkspace">Workspace</strong></span>
+          </div>
+        </div>
+      </div>
+
+
+
     </div>
 
     <!-- Toast -->

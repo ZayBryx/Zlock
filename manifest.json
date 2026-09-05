@@ -17,5 +17,12 @@
       "48": "icons/logo.png",
       "128": "icons/logo.png"
     }
-  }
+  },
+  "host_permissions": [
+    "https://api.clockify.me/*",
+    "https://api.codetabs.com/*",
+    "https://corsproxy.io/*",
+    "https://*.allorigins.win/*",
+    "<all_urls>"
+  ]
 }
